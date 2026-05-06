@@ -45,8 +45,9 @@ app.set('trust proxy', 1);
 // Sécurité — Helmet (headers HTTP défensifs)
 // ---------------------------------------------------------------------------
 app.use(helmet({
-  contentSecurityPolicy: config.isProd, // désactivé en dev pour faciliter le debug
+  contentSecurityPolicy: !config.isProd,
 }));
+
 
 
 // ---------------------------------------------------------------------------
