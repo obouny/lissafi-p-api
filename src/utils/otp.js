@@ -58,16 +58,17 @@ async function sendOtpSms(phone, otp) {
     return result;
   } catch (twilioErr) {
     logger.warn('[OTP] Twilio échoué, tentative Orange API', { error: twilioErr.message });
-    try {
-      const result = await sendViaOrange(phone, message);
-      return result;
-    } catch (orangeErr) {
-      logger.error('[OTP] Tous les providers SMS ont échoué', {
-        twilio: twilioErr.message,
-        orange: orangeErr.message,
-      });
-      throw new Error('Impossible d\'envoyer le SMS. Réessayez dans quelques instants.');
-    }
+
+    // Orange API SMS n'est pas implémentée dans ce projet.
+    // Au lieu de crasher et de renvoyer 500, on renvoie une erreur contrôlée (503)
+    // pour que le déploiement reste stable.
+    // TODO: implémenter réellement sendViaOrange puis réactiver le fallback.
+
+    logger.error('[OTP] Orange API SMS non disponible (fallback désactivé)');
+
+    const err = new Error('Service SMS indisponible. Réessayez dans quelques instants.');
+    err.statusCode = 503;
+    throw err;
   }
 }
 
@@ -99,7 +100,9 @@ async function sendViaOrange(phone, message) {
   // TODO: intégrer l'API SMS d'Orange Cameroun
   // Documentation : https://developer.orange.com/apis/sms-cm/overview
   logger.warn('[OTP] Orange API SMS non encore implémentée');
-  throw new Error('Orange API SMS non implémentée');
+  const err = new Error('Orange API SMS non implémentée');
+  err.statusCode = 503;
+  throw err;
 }
 
 // ---------------------------------------------------------------------------
