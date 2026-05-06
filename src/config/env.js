@@ -58,15 +58,43 @@ function bool(key, defaultValue = false) {
 
 const isProd = optional('NODE_ENV') === 'production';
 
-// En production, toutes ces variables sont obligatoires
+/**
+ * Parse d'une URL PostgreSQL.
+ * Accepte :
+ * - postgresql://user:pass@host:port/db
+ * - postgresql://user@host/db (sans pass)
+ *
+ * @param {string} databaseUrl
+ * @returns {{host:string, port:number, name:string, user:string, password:string}}
+ */
+function parsePostgresUrl(databaseUrl) {
+  // URL() exige un schéma valide
+  const url = new URL(databaseUrl);
+
+  const host = url.hostname;
+  const port = url.port ? parseInt(url.port, 10) : 5432;
+  const name = url.pathname ? url.pathname.replace(/^\//, '') : '';
+
+  const user = url.username || '';
+  const password = url.password || '';
+
+  return { host, port, name, user, password };
+}
+
+// En production, JWT est requis. Pour PostgreSQL, Railway peut fournir tout dans DATABASE_URL.
 if (isProd) {
   [
     'JWT_ACCESS_SECRET',
     'JWT_REFRESH_SECRET',
-    'POSTGRES_PASSWORD',
     'TWILIO_ACCOUNT_SID',
     'TWILIO_AUTH_TOKEN',
   ].forEach(required);
+
+  // POSTGRES_PASSWORD peut ne pas exister en prod si Railway ne fournit que DATABASE_URL.
+  // Donc on ne l'exige que si DATABASE_URL n'est pas présent.
+  if (!process.env.DATABASE_URL && !process.env.DATABASE_PUBLIC_URL) {
+    required('POSTGRES_PASSWORD');
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -88,17 +116,47 @@ const config = Object.freeze({
   },
 
   db: {
-    host:     optional('DB_HOST') || optional('PGHOST', 'localhost'),
-    port:     integer('DB_PORT', 0) || integer('PGPORT', 5432),
-    name:     optional('DB_NAME') || optional('PGDATABASE', 'lissafi_db'),
-    user:     optional('DB_USER') || optional('PGUSER', 'lissafi_user'),
-    password: optional('DB_PASSWORD') || optional('PGPASSWORD', ''),
-    ssl:      bool('DB_SSL', false),
+    // 1) Railway fournit souvent DATABASE_URL (et éventuellement DATABASE_PUBLIC_URL)
+    // 2) Sinon, fallback sur les variables PG* / DB_*.
+
+    ...(() => {
+      const databaseUrl = optional('DATABASE_URL', '') || optional('DATABASE_PUBLIC_URL', '');
+
+      if (databaseUrl) {
+        const parsed = parsePostgresUrl(databaseUrl);
+
+        // DB_SSL : dans Railway, les URLs sont parfois déjà en mode TLS.
+        // On force ssl si DB_SSL=true, sinon on l'active quand l'URL n'indique pas clairement un mode non-SSL.
+        const urlParams = new URL(databaseUrl);
+        const sslFromUrl = (urlParams.searchParams.get('sslmode') || urlParams.searchParams.get('ssl')) !== null;
+        const ssl = bool('DB_SSL', sslFromUrl);
+
+        return {
+          host: parsed.host,
+          port: parsed.port,
+          name: parsed.name || optional('DB_NAME', optional('PGDATABASE', 'lissafi_db')),
+          user: parsed.user || optional('DB_USER', optional('PGUSER', 'lissafi_user')),
+          password: parsed.password || optional('DB_PASSWORD', optional('PGPASSWORD', '')),
+          ssl,
+        };
+      }
+
+      return {
+        host: optional('DB_HOST') || optional('PGHOST', 'localhost'),
+        port: integer('DB_PORT', 0) || integer('PGPORT', 5432),
+        name: optional('DB_NAME') || optional('PGDATABASE', 'lissafi_db'),
+        user: optional('DB_USER') || optional('PGUSER', 'lissafi_user'),
+        password: optional('DB_PASSWORD') || optional('PGPASSWORD', ''),
+        ssl: bool('DB_SSL', false),
+      };
+    })(),
+
     pool: {
       min: integer('DB_POOL_MIN', 2),
       max: integer('DB_POOL_MAX', 10),
     },
   },
+
 
   redis: {
     host:     optional('REDIS_HOST', 'localhost'),
