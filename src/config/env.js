@@ -159,9 +159,9 @@ const config = Object.freeze({
 
 
   redis: {
-    host:     optional('REDIS_HOST', 'localhost'),
-    port:     integer('REDIS_PORT', 6379),
-    password: optional('REDIS_PASSWORD', '') || undefined,
+    host:     optional('REDISHOST', 'localhost'),
+    port:     integer('REDISPORT', 6379),
+    password: optional('REDISPASSWORD', '') || undefined,
     db:       integer('REDIS_DB', 0),
   },
 

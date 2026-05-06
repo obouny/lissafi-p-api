@@ -89,7 +89,7 @@ Renseigner au minimum :
 
 - `PORT`
 - `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`
-- `REDIS_HOST`, `REDIS_PORT`
+- `REDISHOST`, `REDISPORT`
 - `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`
 
 En développement, les valeurs Twilio/Firebase/paiement peuvent rester vides si vous ne testez pas ces intégrations.
