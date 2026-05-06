@@ -63,7 +63,7 @@ if (isProd) {
   [
     'JWT_ACCESS_SECRET',
     'JWT_REFRESH_SECRET',
-    'DB_PASSWORD',
+    'POSTGRES_PASSWORD',
     'TWILIO_ACCOUNT_SID',
     'TWILIO_AUTH_TOKEN',
   ].forEach(required);
