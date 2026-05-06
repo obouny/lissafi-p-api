@@ -37,11 +37,17 @@ const subscriptionsRoutes= require('./modules/subscriptions/subscriptions.routes
 const app = express();
 
 // ---------------------------------------------------------------------------
+// Express rate-limit (req.ip / X-Forwarded-For)
+// ---------------------------------------------------------------------------
+app.set('trust proxy', 1);
+
+// ---------------------------------------------------------------------------
 // Sécurité — Helmet (headers HTTP défensifs)
 // ---------------------------------------------------------------------------
 app.use(helmet({
   contentSecurityPolicy: config.isProd, // désactivé en dev pour faciliter le debug
 }));
+
 
 // ---------------------------------------------------------------------------
 // CORS
