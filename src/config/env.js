@@ -88,11 +88,11 @@ const config = Object.freeze({
   },
 
   db: {
-    host:     optional('DB_HOST', 'localhost'),
-    port:     integer('DB_PORT', 5432),
-    name:     optional('DB_NAME', 'lissafi_db'),
-    user:     optional('DB_USER', 'lissafi_user'),
-    password: optional('DB_PASSWORD', ''),
+    host:     optional('DB_HOST') || optional('PGHOST', 'localhost'),
+    port:     integer('DB_PORT', 0) || integer('PGPORT', 5432),
+    name:     optional('DB_NAME') || optional('PGDATABASE', 'lissafi_db'),
+    user:     optional('DB_USER') || optional('PGUSER', 'lissafi_user'),
+    password: optional('DB_PASSWORD') || optional('PGPASSWORD', ''),
     ssl:      bool('DB_SSL', false),
     pool: {
       min: integer('DB_POOL_MIN', 2),
