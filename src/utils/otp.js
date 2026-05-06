@@ -77,6 +77,13 @@ async function sendOtpSms(phone, otp) {
 // ---------------------------------------------------------------------------
 
 async function sendViaTwilio(phone, message) {
+  // Validation des secrets Twilio : évite des erreurs brutes/500 si une variable est manquante.
+  if (!config.twilio.accountSid || !config.twilio.authToken || !config.twilio.phoneNumber) {
+    const err = new Error('Twilio non configuré. Vérifiez TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER.');
+    err.statusCode = 503;
+    throw err;
+  }
+
   const twilio = require('twilio')(
     config.twilio.accountSid,
     config.twilio.authToken
@@ -91,6 +98,7 @@ async function sendViaTwilio(phone, message) {
   logger.info('[OTP] SMS envoyé via Twilio', { sid: response.sid, phone });
   return { success: true, provider: 'twilio', ref: response.sid };
 }
+
 
 // ---------------------------------------------------------------------------
 // Provider Orange Money Cameroun
