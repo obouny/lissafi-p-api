@@ -55,7 +55,7 @@ app.use(helmet({
 // ---------------------------------------------------------------------------
 const corsOptions = {
   origin: config.isProd
-    ? ['https://lissafi.cm', 'https://www.lissafi.cm', /\.lissafi\.cm$/]
+    ? ['https://lissafi-p-api-production.up.railway.app']
     : '*',
   methods:          ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders:   ['Content-Type', 'Authorization'],
