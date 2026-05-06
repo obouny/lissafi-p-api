@@ -488,27 +488,24 @@ async function createAndSendOtp(userId, identifier, channel = 'sms') {
   const otp     = generateOtp();
   const expires = new Date(Date.now() + config.otp.expiresMinutes * 60 * 1000);
 
-  // Invalider les anciens OTPs non utilisés de cet identifiant
   await db.query(
-    `UPDATE otp_tokens SET is_used = TRUE
-     WHERE identifier = $1 AND is_used = FALSE`,
+    `UPDATE otp_tokens SET is_used = TRUE WHERE identifier = $1 AND is_used = FALSE`,
     [identifier]
   );
-
-  // Insérer le nouvel OTP
   await db.query(
-    `INSERT INTO otp_tokens (user_id, identifier, token, expires_at)
-     VALUES ($1, $2, $3, $4)`,
+    `INSERT INTO otp_tokens (user_id, identifier, token, expires_at) VALUES ($1, $2, $3, $4)`,
     [userId, identifier, otp, expires]
   );
 
-  // Envoyer le SMS (ou mock en dev)
+  let smsMeta = {};
   if (channel === 'sms') {
-    await sendOtpSms(identifier, otp);
+    smsMeta = await sendOtpSms(identifier, otp);
   } else {
-    // TODO: envoyer par email
     logger.info('[Auth] OTP email (non encore implémenté)', { identifier, otp });
   }
+
+  // Retourne l'OTP si bypass activé — le controller le transmettra au client
+  return config.sms.bypass ? { otpBypass: smsMeta.otp } : {};
 }
 
 /**

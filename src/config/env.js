@@ -183,6 +183,10 @@ const config = Object.freeze({
     phoneNumber: optional('TWILIO_PHONE_NUMBER', ''),
   },
 
+  sms: {
+    bypass: bool('SMS_BYPASS', true),
+  },
+
   firebase: {
     projectId:    optional('FIREBASE_PROJECT_ID', ''),
     privateKeyId: optional('FIREBASE_PRIVATE_KEY_ID', ''),

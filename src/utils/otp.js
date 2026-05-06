@@ -42,34 +42,28 @@ function generateOtp() {
 async function sendOtpSms(phone, otp) {
   const message = `[LISSAFI-P] Votre code de vérification est : ${otp}. Valable ${config.otp.expiresMinutes} minutes. Ne le partagez jamais.`;
 
-  // En développement ou test : mock — pas de vrai SMS envoyé
+  // Dev/test : mock
   if (config.isDev || config.isTest) {
-    logger.info('[OTP] MODE DEV — Code OTP généré (pas de SMS envoyé)', {
-      phone,
-      otp,
-      message,
-    });
+    logger.info('[OTP] MODE DEV — Code OTP généré (pas de SMS envoyé)', { phone, otp });
     return { success: true, provider: 'mock', ref: 'dev-' + Date.now() };
   }
 
-  // En production : essai Twilio puis Orange en fallback
+  // Bypass SMS : retourne l'OTP dans la réponse (staging uniquement)
+  if (config.sms.bypass) {
+    logger.warn('[OTP] SMS_BYPASS activé — OTP retourné en clair (désactiver en prod réelle)', { phone, otp });
+    return { success: true, provider: 'bypass', otp }; // ← otp exposé ici
+  }
+
+  // Production : Twilio
   try {
-    const result = await sendViaTwilio(phone, message);
-    return result;
+    return await sendViaTwilio(phone, message);
   } catch (twilioErr) {
     logger.error('[OTP] Twilio échoué — détail complet', {
-      message: twilioErr.message,
-      code:    twilioErr.code,
-      status:  twilioErr.status,
+      message:  twilioErr.message,
+      code:     twilioErr.code,
+      status:   twilioErr.status,
       moreInfo: twilioErr.moreInfo,
     });
-    // Orange API SMS n'est pas implémentée dans ce projet.
-    // Au lieu de crasher et de renvoyer 500, on renvoie une erreur contrôlée (503)
-    // pour que le déploiement reste stable.
-    // TODO: implémenter réellement sendViaOrange puis réactiver le fallback.
-
-    logger.error('[OTP] Orange API SMS non disponible (fallback désactivé)');
-
     const err = new Error('Service SMS indisponible. Réessayez dans quelques instants.');
     err.statusCode = 503;
     throw err;
