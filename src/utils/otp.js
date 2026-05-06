@@ -57,8 +57,12 @@ async function sendOtpSms(phone, otp) {
     const result = await sendViaTwilio(phone, message);
     return result;
   } catch (twilioErr) {
-    logger.warn('[OTP] Twilio échoué, tentative Orange API', { error: twilioErr.message });
-
+    logger.error('[OTP] Twilio échoué — détail complet', {
+      message: twilioErr.message,
+      code:    twilioErr.code,
+      status:  twilioErr.status,
+      moreInfo: twilioErr.moreInfo,
+    });
     // Orange API SMS n'est pas implémentée dans ce projet.
     // Au lieu de crasher et de renvoyer 500, on renvoie une erreur contrôlée (503)
     // pour que le déploiement reste stable.
